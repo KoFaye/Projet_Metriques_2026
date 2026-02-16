@@ -3,334 +3,107 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Atelier — Control Room Météo</title>
+  <title>Atelier — Jauge Vent Marseille</title>
 
   <script src="https://www.gstatic.com/charts/loader.js"></script>
 
   <style>
-    :root{
-      --bg: #f6f7fb;
-      --panel: rgba(255,255,255,.8);
-      --panel2: rgba(255,255,255,.65);
-      --stroke: rgba(17,24,39,.10);
-      --ink: #111827;
-      --muted: rgba(17,24,39,.66);
-
-      --a1:#0ea5e9;  /* bleu */
-      --a2:#22c55e;  /* vert */
-      --a3:#f97316;  /* orange */
-      --a4:#a855f7;  /* violet */
-      --shadow: 0 18px 55px rgba(17,24,39,.12);
-      --radius: 22px;
-
-      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      --sans: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    }
-
-    *{ box-sizing:border-box; }
-    body{
-      margin:0;
-      font-family: var(--sans);
-      color: var(--ink);
-      background:
-        radial-gradient(1200px 600px at 15% 10%, rgba(14,165,233,.12), transparent 60%),
-        radial-gradient(1000px 500px at 85% 15%, rgba(168,85,247,.10), transparent 55%),
-        radial-gradient(1000px 500px at 50% 95%, rgba(34,197,94,.10), transparent 60%),
-        linear-gradient(180deg, var(--bg), #eef1f8);
-      min-height: 100vh;
-    }
-
-    /* grille subtile */
-    body::before{
-      content:"";
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      background-image:
-        linear-gradient(to right, rgba(17,24,39,.05) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(17,24,39,.05) 1px, transparent 1px);
-      background-size: 36px 36px;
-      opacity:.25;
-      mask-image: radial-gradient(60% 60% at 50% 30%, black 40%, transparent 70%);
-    }
-
-    .wrap{
-      width: min(1200px, 92vw);
-      margin: 26px auto 60px;
-      position:relative;
-    }
-
-    header{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:16px;
-      margin-bottom: 14px;
-    }
-
-    .brand{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-    }
-    .topline{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .tag{
-      font-family: var(--mono);
-      font-size: 12px;
-      padding: 8px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--stroke);
-      background: rgba(255,255,255,.7);
-      box-shadow: 0 10px 24px rgba(17,24,39,.06);
-      color: rgba(17,24,39,.75);
-    }
-    .tag strong{ color: rgba(17,24,39,.95); }
-
-    h1{
-      margin: 0;
-      font-size: clamp(28px, 3vw, 44px);
-      letter-spacing: -0.7px;
-      line-height: 1.05;
-    }
-    .subtitle{
-      margin:0;
-      color: var(--muted);
-      max-width: 75ch;
-      line-height: 1.5;
-      font-size: 14px;
-    }
-
-    .live{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      padding: 10px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--stroke);
-      background: rgba(255,255,255,.72);
-      box-shadow: 0 12px 28px rgba(17,24,39,.08);
-      font-family: var(--mono);
-      font-size: 12px;
-      color: rgba(17,24,39,.75);
-      white-space:nowrap;
-    }
-    .dot{
-      width: 10px; height: 10px;
-      border-radius: 999px;
-      background: var(--a2);
-      box-shadow: 0 0 0 7px rgba(34,197,94,.15);
-      animation: pulse 1.3s ease-in-out infinite;
-    }
-    @keyframes pulse{
-      0%,100%{ transform: scale(1); opacity:1; }
-      50%{ transform: scale(.86); opacity:.85; }
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 14px;
-      align-items: stretch;
-      margin-top: 14px;
-    }
-    @media (max-width: 980px){
-      .grid{ grid-template-columns: 1fr; }
-    }
-
-    .card{
-      border-radius: var(--radius);
-      border: 1px solid var(--stroke);
-      background: var(--panel);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      position:relative;
-    }
-
-    /* barre décorative top */
-    .card::before{
-      content:"";
-      position:absolute;
-      inset:0 0 auto 0;
-      height: 8px;
-      background: linear-gradient(90deg, rgba(14,165,233,.7), rgba(168,85,247,.5), rgba(34,197,94,.6), rgba(249,115,22,.6));
-      opacity:.75;
-    }
-
-    .cardInner{
-      padding: 18px 16px 16px;
-    }
-
-    .cardTitle{
-      display:flex;
-      align-items:baseline;
-      justify-content:space-between;
-      gap:12px;
-      margin-bottom: 10px;
-    }
-
-    .cardTitle h2{
-      margin:0;
-      font-size: 16px;
-      letter-spacing: -.2px;
-    }
-
-    .meta{
-      font-family: var(--mono);
-      font-size: 12px;
-      color: rgba(17,24,39,.65);
-      background: rgba(255,255,255,.65);
-      border: 1px dashed rgba(17,24,39,.14);
-      border-radius: 999px;
-      padding: 7px 10px;
-      white-space: nowrap;
-    }
-
-    .big{
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:12px;
-      margin-top: 10px;
-    }
-    .value{
-      font-size: 34px;
-      font-weight: 900;
-      letter-spacing: -0.8px;
-      line-height: 1;
-    }
-    .unit{
-      font-size: 12px;
-      color: rgba(17,24,39,.55);
-      font-family: var(--mono);
-      margin-left: 6px;
-    }
-
-    .hint{
-      margin-top: 10px;
-      color: rgba(17,24,39,.65);
-      font-size: 13px;
-      line-height: 1.45;
-    }
-
-    /* Zones graphiques */
-    .chartBox{
-      border-radius: 18px;
-      border: 1px solid rgba(17,24,39,.10);
-      background: rgba(255,255,255,.55);
-      padding: 10px;
-      margin-top: 12px;
-    }
-    .chart{
-      width:100%;
-      height: 250px;
-    }
-
-    /* panneau log */
-    .log{
-      grid-column: 1 / -1;
-      background: var(--panel2);
-    }
-    pre{
-      margin:0;
-      padding: 12px;
-      border-radius: 18px;
-      background: rgba(17,24,39,.04);
-      border: 1px solid rgba(17,24,39,.08);
-      color: rgba(17,24,39,.85);
-      font-family: var(--mono);
-      font-size: 12px;
-      line-height: 1.55;
-      overflow:auto;
-    }
-
-    .btnRow{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top: 12px;
-    }
-    button{
-      border:0;
-      cursor:pointer;
-      border-radius: 14px;
-      padding: 10px 12px;
-      font-weight: 800;
-      font-size: 13px;
-      letter-spacing: -.2px;
-      transition: transform .12s ease, filter .12s ease;
-    }
-    .btn{
-      background: linear-gradient(135deg, rgba(14,165,233,.9), rgba(168,85,247,.7));
-      color:white;
-      box-shadow: 0 14px 28px rgba(17,24,39,.12);
-    }
-    .btn:hover{ transform: translateY(-1px); filter: brightness(1.02); }
-    .btn:active{ transform: translateY(0); }
-    .btnGhost{
-      background: rgba(17,24,39,.06);
-      border: 1px solid rgba(17,24,39,.12);
-      color: rgba(17,24,39,.82);
-      box-shadow:none;
-    }
-    .btnGhost:hover{ transform: translateY(-1px); }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; }
+    #status { margin-top: 12px; white-space: pre-wrap; color: #374151; }
+    @media (max-width: 900px) { .row { grid-template-columns: 1fr; } }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
-    <header>
-      <div class="brand">
-        <div class="topline">
-          <span class="tag"><strong>/atelier</strong> • Control Room</span>
-          <span class="tag">source: Open-Meteo</span>
-          <span class="tag">chart: Google <strong>Gauge</strong></span>
-        </div>
-        <h1>Station météo — Marseille</h1>
-        <p class="subtitle">
-          Cette page affiche un indicateur météo en temps réel : <b>vitesse du vent</b> + <b>indice de confort</b>.
-          Le format de graphique est volontairement différent des exercices précédents (pas LineChart / pas Histogram).
-        </p>
-      </div>
+  <h1>Atelier — Vent à Marseille</h1>
+  <p>Graphique utilisé : <b>Gauge</b> (pas LineChart / pas Histogram)</p>
 
-      <div class="live"><span class="dot"></span> LIVE • refresh manuel</div>
-    </header>
+  <div class="row">
+    <div class="card">
+      <h2>Vitesse du vent (km/h)</h2>
+      <div id="gauge_wind" style="width:100%; height:260px;"></div>
+    </div>
 
-    <main class="grid">
-      <!-- Carte 1 : Vent -->
-      <section class="card">
-        <div class="cardInner">
-          <div class="cardTitle">
-            <h2>Vent</h2>
-            <div class="meta" id="metaTime1">—</div>
-          </div>
+    <div class="card">
+      <h2>Indice de confort du vent (0–100)</h2>
+      <div id="gauge_comfort" style="width:100%; height:260px;"></div>
+    </div>
+  </div>
 
-          <div class="big">
-            <div class="value"><span id="windValue">—</span><span class="unit">km/h</span></div>
-            <div class="meta" id="city1">—</div>
-          </div>
+  <div id="status"></div>
 
-          <div class="chartBox">
-            <div id="gauge_wind" class="chart"></div>
-          </div>
+  <script>
+    google.charts.load('current', { packages: ['gauge'] });
+    google.charts.setOnLoadCallback(init);
 
-          <div class="hint">
-            Lecture rapide : plus la valeur monte, plus le vent est fort.
-          </div>
-        </div>
-      </section>
+    let cached = null;
 
-      <!-- Carte 2 : Confort -->
-      <section class="card">
-        <div class="cardInner">
-          <div class="cardTitle">
-            <h2>Indice de confort</h2>
-            <div class="meta">0–100</div>
-          </div>
+    async function init() {
+      try {
+        const payload = await fetchAtelierData();
+        cached = payload;
+        draw(payload);
 
-          <div class="big">
-            <div class="value"><span id="comfortValue">—</span><span class="unit">/ 100</span>
+        window.addEventListener('resize', () => {
+          if (cached) draw(cached);
+        });
+
+      } catch (err) {
+        showStatus("Erreur: " + (err?.message || err));
+        console.error(err);
+      }
+    }
+
+    async function fetchAtelierData() {
+      const res = await fetch('/atelier_data', { headers: { 'Accept': 'application/json' } });
+      if (!res.ok) throw new Error(`HTTP ${res.status} sur /atelier_data`);
+      return await res.json();
+    }
+
+    function draw(p) {
+      // Gauge vent
+      const dataWind = google.visualization.arrayToDataTable([
+        ['Label', 'Value'],
+        ['Vent', Number(p.wind_kmh)]
+      ]);
+
+      const optWind = {
+        min: 0,
+        max: 100,
+        majorTicks: ['0','20','40','60','80','100']
+      };
+
+      const windChart = new google.visualization.Gauge(document.getElementById('gauge_wind'));
+      windChart.draw(dataWind, optWind);
+
+      // Gauge confort
+      const dataComfort = google.visualization.arrayToDataTable([
+        ['Label', 'Value'],
+        ['Confort', Number(p.comfort_index)]
+      ]);
+
+      const optComfort = {
+        min: 0,
+        max: 100,
+        majorTicks: ['0','20','40','60','80','100']
+      };
+
+      const comfortChart = new google.visualization.Gauge(document.getElementById('gauge_comfort'));
+      comfortChart.draw(dataComfort, optComfort);
+
+      showStatus(
+        `OK — ${p.city}\n` +
+        `Heure (API): ${p.time}\n` +
+        `Vent: ${p.wind_kmh.toFixed(1)} km/h\n` +
+        `Indice confort: ${p.comfort_index.toFixed(0)} / 100`
+      );
+    }
+
+    function showStatus(msg) {
+      document.getElementById('status').textContent = msg;
+    }
+  </script>
+</body>
+</html>
