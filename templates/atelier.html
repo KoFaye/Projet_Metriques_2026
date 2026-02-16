@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Atelier — Jauge Vent Marseille</title>
+
+  <script src="https://www.gstatic.com/charts/loader.js"></script>
+
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; }
+    #status { margin-top: 12px; white-space: pre-wrap; color: #374151; }
+    @media (max-width: 900px) { .row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+
+<body>
+  <h1>Atelier — Vent à Marseille</h1>
+  <p>Graphique utilisé : <b>Gauge</b> (pas LineChart / pas Histogram)</p>
+
+  <div class="row">
+    <div class="card">
+      <h2>Vitesse du vent (km/h)</h2>
+      <div id="gauge_wind" style="width:100%; height:260px;"></div>
+    </div>
+
+    <div class="card">
+      <h2>Indice de confort du vent (0–100)</h2>
+      <div id="gauge_comfort" style="width:100%; height:260px;"></div>
+    </div>
+  </div>
+
+  <div id="status"></div>
+
+  <script>
+    google.charts.load('current', { packages: ['gauge'] });
+    google.charts.setOnLoadCallback(init);
+
+    let cached = null;
+
+    async function init() {
+      try {
+        const payload = await fetchAtelierData();
+        cached = payload;
+        draw(payload);
+
+        window.addEventListener('resize', () => {
+          if (cached) draw(cached);
+        });
+
+      } catch (err) {
+        showStatus("Erreur: " + (err?.message || err));
+        console.error(err);
+      }
+    }
+
+    async function fetchAtelierData() {
+      const res = await fetch('/atelier_data', { headers: { 'Accept': 'application/json' } });
+      if (!res.ok) throw new Error(`HTTP ${res.status} sur /atelier_data`);
+      return await res.json();
+    }
+
+    function draw(p) {
+      // Gauge vent
+      const dataWind = google.visualization.arrayToDataTable([
+        ['Label', 'Value'],
+        ['Vent', Number(p.wind_kmh)]
+      ]);
+
+      const optWind = {
+        min: 0,
+        max: 100,
+        majorTicks: ['0','20','40','60','80','100']
+      };
+
+      const windChart = new google.visualization.Gauge(document.getElementById('gauge_wind'));
+      windChart.draw(dataWind, optWind);
+
+      // Gauge confort
+      const dataComfort = google.visualization.arrayToDataTable([
+        ['Label', 'Value'],
+        ['Confort', Number(p.comfort_index)]
+      ]);
+
+      const optComfort = {
+        min: 0,
+        max: 100,
+        majorTicks: ['0','20','40','60','80','100']
+      };
+
+      const comfortChart = new google.visualization.Gauge(document.getElementById('gauge_comfort'));
+      comfortChart.draw(dataComfort, optComfort);
+
+      showStatus(
+        `OK — ${p.city}\n` +
+        `Heure (API): ${p.time}\n` +
+        `Vent: ${p.wind_kmh.toFixed(1)} km/h\n` +
+        `Indice confort: ${p.comfort_index.toFixed(0)} / 100`
+      );
+    }
+
+    function showStatus(msg) {
+      document.getElementById('status').textContent = msg;
+    }
+  </script>
+</body>
+</html>

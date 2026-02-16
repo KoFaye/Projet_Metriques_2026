@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Températures Paris — Google LineChart</title>
+  <title>Températures Paris — Histogram</title>
 
   <script src="https://www.gstatic.com/charts/loader.js"></script>
 
@@ -15,7 +15,7 @@
 </head>
 
 <body>
-  <h1>Températures horaires — Paris</h1>
+  <h1>Histogramme des températures — Paris</h1>
   <div id="chart"></div>
   <div id="status"></div>
 
@@ -23,16 +23,16 @@
     google.charts.load('current', { packages: ['corechart'] });
     google.charts.setOnLoadCallback(init);
 
-    let cachedRows = null;
+    let cachedTemps = null;
 
     async function init() {
       try {
-        const rows = await fetchParisData();
-        cachedRows = rows;
-        drawChart(rows);
+        const temps = await fetchParisTemperatures();
+        cachedTemps = temps;
+        drawHistogram(temps);
 
         window.addEventListener('resize', () => {
-          if (cachedRows) drawChart(cachedRows);
+          if (cachedTemps) drawHistogram(cachedTemps);
         });
       } catch (err) {
         showStatus("Erreur: " + (err?.message || err));
@@ -40,7 +40,7 @@
       }
     }
 
-    async function fetchParisData() {
+    async function fetchParisTemperatures() {
       const res = await fetch('/paris', { headers: { 'Accept': 'application/json' } });
 
       if (!res.ok) {
@@ -50,51 +50,44 @@
       const json = await res.json();
 
       // json attendu: [{ datetime: "2026-02-15T00:00", temperature_c: 0.5 }, ...]
-      // Convertir en rows: [Date, Number]
-      const rows = json.map(p => {
-        const dt = toDate(p.datetime);
-        const temp = Number(p.temperature_c);
-        return [dt, temp];
-      });
+      // Pour un histogramme, on garde uniquement les valeurs numériques (températures).
+      const temps = json
+        .map(p => Number(p.temperature_c))
+        .filter(v => Number.isFinite(v));
 
-      // Optionnel: trier par date au cas où
-      rows.sort((a, b) => a[0] - b[0]);
+      if (temps.length === 0) {
+        throw new Error("Aucune température valide reçue depuis /paris");
+      }
 
-      return rows;
+      return temps;
     }
 
-    function toDate(isoLike) {
-      // "2026-02-15T00:00"
-      // On parse en Date locale. Si tu veux forcer UTC, dis-moi.
-      const [datePart, timePart] = isoLike.split('T');
-      const [y, m, d] = datePart.split('-').map(Number);
-      const [hh, mm] = timePart.split(':').map(Number);
-      return new Date(y, m - 1, d, hh, mm, 0);
-    }
-
-    function drawChart(rows) {
+    function drawHistogram(temps) {
       const data = new google.visualization.DataTable();
-      data.addColumn('datetime', 'Date/Heure');
       data.addColumn('number', 'Température (°C)');
-      data.addRows(rows);
+
+      // Chaque ligne = une observation
+      data.addRows(temps.map(t => [t]));
 
       const options = {
-        title: 'Température à Paris (horaire)',
-        legend: { position: 'bottom' },
-        hAxis: {
-          title: 'Date/Heure',
-          format: 'dd/MM HH:mm'
-        },
-        vAxis: {
-          title: '°C'
-        },
+        title: 'Répartition des températures à Paris (°C)',
+        legend: { position: 'none' },
+
+        // Axe X = valeurs, Axe Y = fréquence (nombre d’occurrences)
+        hAxis: { title: 'Température (°C)' },
+        vAxis: { title: 'Fréquence (nb de mesures)' },
+
+        // Ajustables (tu peux enlever si tu veux l’auto)
+        // bucketSize: 1, // ex: 1°C par "barre"
+        // histogram: { bucketSize: 1 },
+
         explorer: { actions: ['dragToZoom', 'rightClickToReset'] }
       };
 
-      const chart = new google.visualization.LineChart(document.getElementById('chart'));
+      const chart = new google.visualization.Histogram(document.getElementById('chart'));
       chart.draw(data, options);
 
-      showStatus(`OK — ${rows.length} points chargés depuis /paris`);
+      showStatus(`OK — ${temps.length} mesures chargées depuis /paris`);
     }
 
     function showStatus(msg) {
