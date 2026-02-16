@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contact — Carte Postale</title>
+
+  <style>
+    :root{
+      --paper:#fbf6ea;
+      --paper2:#f3ecd8;
+      --ink:#1f2937;
+      --muted:#5b6473;
+      --accent:#ff4d6d;      /* corail/rose */
+      --accent2:#2a9d8f;     /* vert/bleu */
+      --accent3:#f4a261;     /* sable orange */
+      --stroke:rgba(31,41,55,.18);
+      --shadow: 0 18px 55px rgba(0,0,0,.18);
+      --radius: 22px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: var(--sans);
+      color: var(--ink);
+      background:
+        radial-gradient(900px 420px at 15% 15%, rgba(255,77,109,.12), transparent 60%),
+        radial-gradient(900px 420px at 85% 20%, rgba(42,157,143,.12), transparent 60%),
+        radial-gradient(900px 520px at 50% 90%, rgba(244,162,97,.10), transparent 60%),
+        linear-gradient(180deg, var(--paper), var(--paper2));
+      min-height:100vh;
+    }
+
+    /* texture papier */
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background-image:
+        radial-gradient(rgba(0,0,0,.035) 1px, transparent 1px);
+      background-size: 18px 18px;
+      opacity:.35;
+      mix-blend-mode:multiply;
+    }
+
+    .wrap{
+      width:min(1100px, 92vw);
+      margin: 28px auto 60px;
+      position:relative;
+    }
+
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:16px;
+      margin-bottom:16px;
+    }
+
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .kicker{
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    h1{
+      margin:0;
+      font-size: clamp(28px, 3vw, 44px);
+      letter-spacing: -0.8px;
+      line-height: 1.05;
+    }
+
+    .sub{
+      margin:0;
+      color: var(--muted);
+      max-width: 65ch;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .routeTag{
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border:1px dashed var(--stroke);
+      background: rgba(255,255,255,.35);
+      box-shadow: 0 10px 22px rgba(0,0,0,.06);
+    }
+
+    /* Layout carte postale */
+    .postcard{
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+    @media (max-width: 960px){
+      .postcard{ grid-template-columns: 1fr; }
+    }
+
+    .panel{
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.55);
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+
+    /* Effet “découpe” en haut */
+    .panel::before{
+      content:"";
+      position:absolute;
+      inset:0 0 auto 0;
+      height: 18px;
+      background:
+        radial-gradient(circle at 10px 9px, transparent 10px, rgba(255,255,255,.55) 10px) repeat-x;
+      background-size: 22px 18px;
+      border-bottom: 1px solid rgba(0,0,0,.06);
+      opacity:.95;
+    }
+
+    .panelInner{
+      padding: 26px 18px 18px;
+    }
+
+    /* Gauche : “illustration” type collage */
+    .art{
+      min-height: 420px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap:16px;
+      background:
+        linear-gradient(135deg, rgba(255,77,109,.14), rgba(42,157,143,.12)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cpath d='M0 0h240v240H0z' fill='none'/%3E%3Cpath d='M20 40c40-30 90 10 120-10s60-50 80-10' stroke='rgba(31,41,55,.10)' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Cpath d='M30 160c55 25 70-25 120-5s70 40 80 10' stroke='rgba(31,41,55,.10)' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-blend-mode:multiply;
+      background-size: cover, 240px 240px;
+    }
+
+    .badgeRow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.55);
+      border: 1px solid var(--stroke);
+      font-size: 13px;
+      color: rgba(31,41,55,.86);
+    }
+
+    .chip .dot{
+      width:10px; height:10px;
+      border-radius: 999px;
+      background: var(--accent2);
+      box-shadow: 0 0 0 6px rgba(42,157,143,.10);
+    }
+
+    .stamp{
+      width: 130px;
+      height: 160px;
+      border-radius: 18px;
+      border: 2px dashed rgba(31,41,55,.22);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,.45));
+      transform: rotate(-2deg);
+      box-shadow: 0 14px 28px rgba(0,0,0,.12);
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      padding: 12px;
+      position:relative;
+      overflow:hidden;
+    }
+    .stamp::after{
+      content:"";
+      position:absolute;
+      inset:auto -40px 26px -40px;
+      height: 14px;
+      background: rgba(255,77,109,.22);
+      transform: rotate(-10deg);
+    }
+    .stampTop{
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .14em;
+      color: rgba(31,41,55,.70);
+    }
+    .stampMid{
+      font-size: 34px;
+      line-height: 1;
+    }
+    .stampBot{
+      font-family: var(--mono);
+      font-size: 12px;
+      color: rgba(31,41,55,.70);
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .note{
+      border-radius: 18px;
+      border: 1px solid rgba(31,41,55,.14);
+      background: rgba(255,255,255,.55);
+      padding: 14px;
+      box-shadow: 0 10px 22px rgba(0,0,0,.06);
+    }
+    .note b{
+      display:block;
+      margin-bottom:6px;
+      letter-spacing:-.2px;
+    }
+    .note p{
+      margin:0;
+      color: var(--muted);
+      line-height:1.5;
+      font-size: 14px;
+    }
+
+    /* Droite : form “lettre” */
+    .formTitle{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 10px;
+    }
+    .formTitle h2{
+      margin:0;
+      font-size: 18px;
+      letter-spacing:-.2px;
+    }
+
+    .mark{
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.55);
+      border: 1px solid var(--stroke);
+      color: rgba(31,41,55,.72);
+    }
+
+    form{
+      display:grid;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .row2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 520px){
+      .row2{ grid-template-columns: 1fr; }
+    }
+
+    label{
+      font-size: 12px;
+      font-family: var(--mono);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: rgba(31,41,55,.70);
+      display:block;
+      margin: 2px 0 6px;
+    }
+
+    input, textarea{
+      width:100%;
+      border-radius: 16px;
+      border: 1px solid rgba(31,41,55,.18);
+      background: rgba(255,255,255,.72);
+      padding: 12px 12px;
+      color: var(--ink);
+      outline:none;
+      transition: box-shadow .15s ease, transform .10s ease, border-color .15s ease;
+      font-size: 14px;
+    }
+
+    input:focus, textarea:focus{
+      border-color: rgba(255,77,109,.55);
+      box-shadow: 0 0 0 5px rgba(255,77,109,.14);
+      transform: translateY(-1px);
+    }
+
+    textarea{
+      min-height: 160px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .toolbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top: 2px;
+    }
+
+    .counter{
+      font-family: var(--mono);
+      font-size: 12px;
+      color: rgba(31,41,55,.68);
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.55);
+      border: 1px dashed rgba(31,41,55,.20);
+    }
+
+    .btns{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+
+    button{
+      border:0;
+      cursor:pointer;
+      border-radius: 16px;
+      padding: 12px 14px;
+      font-weight: 800;
+      letter-spacing: -.2px;
+      transition: transform .12s ease, filter .12s ease;
+      font-size: 14px;
+    }
+
+    .btnSend{
+      background: linear-gradient(135deg, var(--accent), var(--accent3));
+      color: white;
+      box-shadow: 0 14px 28px rgba(255,77,109,.22);
+      min-width: 160px;
+    }
+    .btnSend:hover{ transform: translateY(-1px); filter: brightness(1.03); }
+    .btnSend:active{ transform: translateY(0); }
+
+    .btnClear{
+      background: rgba(31,41,55,.08);
+      color: rgba(31,41,55,.86);
+      border: 1px solid rgba(31,41,55,.18);
+    }
+    .btnClear:hover{ transform: translateY(-1px); }
+
+    .toast{
+      display:none;
+      margin-top: 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(42,157,143,.30);
+      background: rgba(42,157,143,.10);
+      padding: 12px;
+      color: rgba(31,41,55,.92);
+      line-height: 1.45;
+      box-shadow: 0 12px 26px rgba(0,0,0,.08);
+    }
+
+    .smallprint{
+      margin-top: 12px;
+      color: rgba(31,41,55,.62);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .divider{
+      height: 1px;
+      background: rgba(31,41,55,.10);
+      margin: 12px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <div class="kicker">atelier flask • page contact créative</div>
+        <h1>Écris-moi comme une carte postale</h1>
+        <p class="sub">
+          Tu peux laisser ton <b>nom</b>, ton <b>prénom</b> et un <b>message</b>.
+          L’envoi est simulé (pas de BDD) : l’objectif est uniquement le <b>design</b>.
+        </p>
+      </div>
+      <div class="routeTag">Route : /contact</div>
+    </header>
+
+    <main class="postcard">
+      <!-- PANNEAU GAUCHE : collage / ambiance -->
+      <section class="panel art">
+        <div class="panelInner">
+          <div class="badgeRow">
+            <div class="chip"><span class="dot"></span> En ligne (fictif)</div>
+            <div class="chip">🎒 MCSI / Atelier</div>
+            <div class="chip">✦ Design “paper-cut”</div>
+          </div>
+
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-top:14px;">
+            <div class="note" style="flex:1;">
+              <b>Mini brief</b>
+              <p>
+                Une page qui ressemble à un <b>carnet</b> + <b>carte postale</b> :
+                textures, timbre, étiquettes, typographie mono… et un formulaire clair.
+              </p>
+            </div>
+
+            <div class="stamp" aria-hidden="true">
+              <div class="stampTop">POSTCARD</div>
+              <div class="stampMid">✉️</div>
+              <div class="stampBot">
+                <span>2026</span>
+                <span>FR</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="note">
+            <b>Tu peux écrire :</b>
+            <p>
+              • Une question<br/>
+              • Une demande pro / projet<br/>
+              • Un message rapide (ou long)
+            </p>
+          </div>
+
+          <div class="smallprint">
+            Astuce : le compteur de caractères t’aide à doser ton message.
+          </div>
+        </div>
+      </section>
+
+      <!-- PANNEAU DROIT : lettre / formulaire -->
+      <section class="panel">
+        <div class="panelInner">
+          <div class="formTitle">
+            <h2>Formulaire</h2>
+            <div class="mark">no-db • front only</div>
+          </div>
+
+          <form id="contactForm" autocomplete="on">
+            <div class="row2">
+              <div>
+                <label for="lastname">Nom</label>
+                <input id="lastname" name="lastname" placeholder="Ex : Faye" required />
+              </div>
+              <div>
+                <label for="firstname">Prénom</label>
+                <input id="firstname" name="firstname" placeholder="Ex : Pierre Emmanuel" required />
+              </div>
+            </div>
+
+            <div>
+              <label for="message">Message</label>
+              <textarea id="message" name="message" placeholder="Écris ton message ici…" required></textarea>
+            </div>
+
+            <div class="toolbar">
+              <div class="counter" id="counter">0 / 500</div>
+              <div class="btns">
+                <button type="reset" class="btnClear">Effacer</button>
+                <button type="submit" class="btnSend">Envoyer (démo)</button>
+              </div>
+            </div>
+
+            <div id="toast" class="toast"></div>
+
+            <div class="smallprint">
+              Les données ne sont pas sauvegardées : cette page est évaluée sur le rendu visuel.
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const form = document.getElementById('contactForm');
+    const toast = document.getElementById('toast');
+    const msg = document.getElementById('message');
+    const counter = document.getElementById('counter');
+
+    const MAX = 500;
+
+    function updateCounter(){
+      const len = msg.value.length;
+      counter.textContent = `${len} / ${MAX}`;
+      // petite alerte visuelle si > MAX (sans bloquer l'exercice)
+      if (len > MAX) {
+        counter.style.borderColor = "rgba(255,77,109,.55)";
+      } else {
+        counter.style.borderColor = "rgba(31,41,55,.20)";
+      }
+    }
+
+    msg.addEventListener('input', updateCounter);
+    updateCounter();
+
+    form.addEventListener('reset', () => {
+      setTimeout(() => {
+        toast.style.display = 'none';
+        toast.textContent = '';
+        updateCounter();
+      }, 0);
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const lastname = document.getElementById('lastname').value.trim();
+      const firstname = document.getElementById('firstname').value.trim();
+      const message = msg.value.trim();
+
+      toast.style.display = 'block';
+      toast.textContent = `Merci ${firstname} ${lastname} ! Ton message (démo) a bien été “envoyé”.`;
+
+      toast.animate(
+        [{ transform: 'translateY(8px)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }],
+        { duration: 220, easing: 'ease-out' }
+      );
+
+      // Optionnel : reset après envoi
+      form.reset();
+    });
+  </script>
+</body>
+</html>
